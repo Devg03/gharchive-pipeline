@@ -50,3 +50,6 @@ events_by_types = (
 )
 
 events_by_types.show()
+
+repo_activity.write.mode("overwrite").parquet("data/processed/repo_activity")
+events_by_types.write.mode("overwrite").parquet("data/processed/events_by_type")
