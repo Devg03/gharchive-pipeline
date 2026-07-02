@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: stg_repo_activity
+    columns:
+      - name: repo_name
+        tests:
+          - not_null
+      - name: event_count
+        tests:
+          - not_null
+
+  - name: stg_events_by_type
+    columns:
+      - name: type
+        tests:
+          - not_null
+          - unique

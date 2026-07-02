@@ -1,0 +1,7 @@
+
+target/
+dbt_packages/
+logs/
+gharchive_dbt/target/
+gharchive_dbt/dbt_packages/
+gharchive_dbt/logs/
