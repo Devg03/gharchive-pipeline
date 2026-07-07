@@ -39,7 +39,7 @@ flowchart LR
 1. **Ingest** — A Python script pulls hourly `.json.gz` files from GH Archive and lands them raw in S3, partitioned by `year/month/day/hour` in Hive-style directories.
 2. **Process** — A PySpark job reads the raw nested JSON, flattens the fields I care about, filters to 5 meaningful event types, and aggregates. The ~3.8M raw events collapse to ~507K repo rows and a 5-row event-type summary, written back to S3 as Parquet.
 3. **Load** — The aggregated Parquet is loaded into BigQuery raw tables.
-4. **Transform** — dbt builds staging models over the raw tables and a mart layer for analytics, with \`not_null\` and \`unique\` data tests.
+4. **Transform** — dbt builds staging models over the raw tables and a mart layer for analytics, with `not_null` and `unique` data tests.
 5. **Serve** — A Streamlit dashboard queries the dbt marts and renders interactive Plotly charts.
 6. **Orchestrate** — An Airflow DAG sequences the four stages (ingest -> process -> load -> dbt) on a daily schedule.
 
@@ -51,13 +51,13 @@ flowchart LR
 
 **I kept S3 as a data lake layer** — raw and aggregated data land in S3 as Parquet before loading to BigQuery. This is the lake-to-warehouse pattern used in production, and it makes the project genuinely cross-cloud (AWS storage feeding a GCP warehouse).
 
-**I partitioned raw files Hive-style** (\`year=/month=/day=/hour=\`) so Spark reads the partitions as queryable columns automatically, with no path parsing.
+**I partitioned raw files Hive-style** (`year=/month=/day=/hour=`) so Spark reads the partitions as queryable columns automatically, with no path parsing.
 
 **I added dbt tests** so data issues fail loudly. The models enforce non-null keys and a uniqueness constraint on the event-type dimension.
 
 ## Data Quality Notes
 
-GH Archive's raw stream contains a lot of bot activity — a handful of accounts producing 76K-81K empty-commit events per day, far above the ~41K peak of any organic repo. I deferred this cleanup out of Spark and into the dbt mart layer, where business logic belongs: \`mart_top_repos\` excludes repositories above the anomalous threshold. Fully separating bot from human activity would be its own project; the threshold filter removes the obvious spam while staying explainable.
+GH Archive's raw stream contains a lot of bot activity — a handful of accounts producing 76K-81K empty-commit events per day, far above the ~41K peak of any organic repo. I deferred this cleanup out of Spark and into the dbt mart layer, where business logic belongs: `mart_top_repos` excludes repositories above the anomalous threshold. Fully separating bot from human activity would be its own project; the threshold filter removes the obvious spam while staying explainable.
 
 ## Running Locally
 
@@ -68,35 +68,35 @@ GH Archive's raw stream contains a lot of bot activity — a handful of accounts
 - A GCP project with BigQuery enabled
 
 ### Setup
-\`\`\`bash
+```bash
 python3.13 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# AWS: configure via \`aws configure\` or a gitignored .env
+# AWS: configure via `aws configure` or a gitignored .env
 # GCP: gcloud auth application-default login
-\`\`\`
+```
 
 ### Run the stages
-\`\`\`bash
+```bash
 python ingest.py                          # GH Archive -> S3
 python process.py                         # PySpark aggregation -> S3
 python load.py                            # S3 Parquet -> BigQuery
 cd gharchive_dbt && dbt run && dbt test   # transform + test
 streamlit run dashboard.py                # dashboard
-\`\`\`
+```
 
 ### Orchestration
-\`\`\`bash
+```bash
 cd airflow
 docker compose up -d                      # Airflow at localhost:8080
-\`\`\`
+```
 
 ## Limitations & Future Work
 
 - **Airflow execution.** The DAG defines and schedules the four stages with correct dependency ordering. Tasks are currently wired as shell commands; running the Spark and dbt steps fully inside the Airflow containers would mean packaging those dependencies and credentials into a custom image — the natural next step.
 - **Data scope.** The pipeline processes a single day. Running the DAG on its daily schedule accumulates history over time.
-- **S3 read path.** Spark reads from a local copy of the S3 data during development; wiring the \`s3a://\` connector for direct reads is a follow-up.
+- **S3 read path.** Spark reads from a local copy of the S3 data during development; wiring the `s3a://` connector for direct reads is a follow-up.
 
 ---
 
