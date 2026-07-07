@@ -1,3 +1,18 @@
+"""
+GH Archive ELT Pipeline DAG
+
+Orchestrates the four pipeline stages in dependency order on a daily schedule:
+    ingest  -> pull hourly GH Archive files into S3
+    process -> aggregate with PySpark, write Parquet back to S3
+    load    -> load aggregated Parquet into BigQuery
+    dbt     -> build staging + mart models and run data tests
+
+Note: tasks are wired as shell commands to define the pipeline structure and
+scheduling. Running the Spark and dbt steps fully inside the Airflow containers
+would require packaging their dependencies and cloud credentials into a custom
+image, which is the intended next step.
+"""
+
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from datetime import datetime
